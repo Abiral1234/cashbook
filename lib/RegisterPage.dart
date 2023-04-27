@@ -26,6 +26,14 @@ class _RegisterPageState extends State<RegisterPage> {
   bool incomplete = false;
   bool loading = false;
   bool success = false;
+  bool duplicatephone = false;
+
+  initState() {
+    print("Hello");
+  }
+
+  checkPhoneNumber() async {}
+
   register() async {
     //VALIDATION
     if (phoneno.text == "" ||
@@ -43,48 +51,99 @@ class _RegisterPageState extends State<RegisterPage> {
       setState(() {
         loading = true;
       });
+      // // Verification of admin
+
+      try {
+        String body2 =
+            //     "INSERT INTO tb_cashbook(id_receipt,date_transaction,cash_code,balance,explanation,from_to_name) VALUES ('1','2023/04/02','BNI','2200','transfer','abiral')";
+            "SELECT * FROM tb_user";
+
+        response = await http.post(
+          Uri.parse("http://api4test.my.id:5000/api/v1/opensql"),
+          headers: {'accept': 'application/json', 'Content-Type': 'text/plain'},
+          body: body2,
+        );
+        if (response.statusCode == 200) {
+          var data = jsonDecode(response.body.toString());
+          print(data.length);
+          var phones = [];
+          for (int i = 0; i < data.length; i++) {
+            phones.add(data[i]['phone']);
+          }
+
+          for (String phone in phones) {
+            setState(() {
+              duplicatephone = false;
+            });
+            if (phone.toString().contains(phoneno.text.toString())) {
+              setState(() {
+                duplicatephone = true;
+              });
+
+              break;
+            }
+          }
+
+          // for (int i = 0; i < data.length; i++) {
+          //   print(data[i]['phone']);
+          //   print(phoneno.text);
+          //   if (phoneno.text == data[i]['phone']) {
+          //     print("already registered");
+          //     setState(() {
+          //       duplicatephone = true;
+          //     });
+          //   }
+          // }
+        } else {}
+      } catch (e) {
+        print(e);
+      }
+      print(duplicatephone);
       print("Hello");
+
       var bytes = utf8.encode(otp.text); // convert to bytes
       var md5Hash = md5.convert(bytes); // calculate the hash
       String hashedPassword = md5Hash.toString();
       try {
-        var body = json.encode({
-          "name": ownerName.text,
-          "phone": phoneno.text,
-          "otp": hashedPassword,
-          "business_name": businessName.text
-        });
+        if (duplicatephone == false) {
+          var body = json.encode({
+            "name": ownerName.text,
+            "phone": phoneno.text,
+            "otp": hashedPassword,
+            "business_name": businessName.text
+          });
 //         String sql = '''INSERT INTO tb_user (name,phone,otp,business_name)
 // VALUES ('\'${ownerName.text}'\'', '\'${phoneno.text}\'','\'${hashedPassword}\'','\'${businessName.text}'\'')''';
-        String body2 =
-            "INSERT INTO tb_user (name,phone,otp,business_name) VALUES ('${ownerName.text}','${phoneno.text}','${hashedPassword}','${businessName.text}');";
+          String body2 =
+              "INSERT INTO tb_user (name,phone,otp,business_name) VALUES ('${ownerName.text}','${phoneno.text}','${hashedPassword}','${businessName.text}');";
 
-        response = await http.post(
-            Uri.parse("http://api4test.my.id:5000/api/v1/exesql"),
-            headers: {
-              'accept': 'application/json',
-              'Content-Type': 'text/plain',
-            },
-            body: body2);
-        print("Your response status code is");
-        print(response.statusCode);
+          response = await http.post(
+              Uri.parse("http://api4test.my.id:5000/api/v1/exesql"),
+              headers: {
+                'accept': 'application/json',
+                'Content-Type': 'text/plain',
+              },
+              body: body2);
+          print("Your response status code is");
+          print(response.statusCode);
 
-        if (response.statusCode == 200) {
-          print("User Registerd ");
-          var data = jsonDecode(response.body.toString());
-          print(data);
-          setState(() {
-            success = true;
-          });
+          if (response.statusCode == 200) {
+            print("User Registerd ");
+            var data = jsonDecode(response.body.toString());
+            print(data);
+            setState(() {
+              success = true;
+            });
 
-          Get.offAll(LoginPage());
-        } else {
-          setState(() {
-            failed = true;
-            success = false;
-            incomplete = false;
-            loading = false;
-          });
+            Get.offAll(LoginPage());
+          } else {
+            setState(() {
+              failed = true;
+              success = false;
+              incomplete = false;
+              loading = false;
+            });
+          }
         }
       } catch (e) {
         print(e);
@@ -150,6 +209,12 @@ class _RegisterPageState extends State<RegisterPage> {
                               failed == true
                                   ? Text(
                                       "Register failed",
+                                      style: TextStyle(color: Colors.red),
+                                    )
+                                  : Container(),
+                              duplicatephone == true
+                                  ? Text(
+                                      "Already registered",
                                       style: TextStyle(color: Colors.red),
                                     )
                                   : Container(),

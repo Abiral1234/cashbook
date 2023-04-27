@@ -25,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   bool failed = false;
 
   //////////////////////////////API TO VERIFY ADMIN\\\\\\\\\\\\\\\\\\\\\\
+  ///
 
   login() async {
     //VALIDATION
